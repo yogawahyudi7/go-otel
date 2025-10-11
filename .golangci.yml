@@ -1,0 +1,69 @@
+run:
+  timeout: 5m
+  tests: true
+  skip-dirs:
+    - bin
+    - vendor
+    - tmp
+
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - gofmt
+    - goimports
+    - misspell
+    - revive
+  disable:
+    - typecheck  # Disable if causing issues with generics
+
+linters-settings:
+  errcheck:
+    check-type-assertions: false
+    check-blank: false
+    exclude-functions:
+      - (io.Closer).Close
+      - (*database/sql.Rows).Close
+      - (*os.File).Close
+
+  revive:
+    rules:
+      - name: unused-parameter
+        disabled: true
+      - name: unexported-return
+        disabled: true
+      - name: var-naming
+        disabled: true
+
+  goimports:
+    local-prefixes: github.com/yogawahyudi7/go-otel
+
+issues:
+  exclude-rules:
+    # Exclude some linters from running on tests files
+    - path: _test\.go
+      linters:
+        - errcheck
+        - gosec
+
+    # Exclude known false positives
+    - text: "Error return value of .((os\\.)?std(out|err)\\..*|.*Close|.*Flush|os\\.Remove(All)?|.*printf?|os\\.(Un)?Setenv). is not checked"
+      linters:
+        - errcheck
+
+    # Exclude shadow checking on err variable
+    - text: "shadow: declaration of \"err\""
+      linters:
+        - govet
+
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true

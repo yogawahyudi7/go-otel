@@ -4,8 +4,9 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/yogawahyudi7/go-otel/pkg/logger"
 	"go.uber.org/zap"
+
+	"github.com/yogawahyudi7/go-otel/pkg/logger"
 )
 
 // RequestLogger logs HTTP requests with structured logging

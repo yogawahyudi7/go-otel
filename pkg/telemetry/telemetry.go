@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/yogawahyudi7/go-otel/config"
-	"github.com/yogawahyudi7/go-otel/pkg/logger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -18,6 +16,9 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	"github.com/yogawahyudi7/go-otel/config"
+	"github.com/yogawahyudi7/go-otel/pkg/logger"
 )
 
 var tracerProvider *sdktrace.TracerProvider

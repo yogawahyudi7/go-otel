@@ -6,12 +6,13 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/yogawahyudi7/go-otel/internal/domain"
-	"github.com/yogawahyudi7/go-otel/internal/service"
-	"github.com/yogawahyudi7/go-otel/pkg/logger"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
+
+	"github.com/yogawahyudi7/go-otel/internal/domain"
+	"github.com/yogawahyudi7/go-otel/internal/service"
+	"github.com/yogawahyudi7/go-otel/pkg/logger"
 )
 
 // UserHandler handles HTTP requests for user operations

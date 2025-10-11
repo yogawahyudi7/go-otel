@@ -11,6 +11,9 @@ import (
 
 	"github.com/labstack/echo/v4"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho"
+	"go.uber.org/zap"
+
 	"github.com/yogawahyudi7/go-otel/config"
 	"github.com/yogawahyudi7/go-otel/internal/domain"
 	"github.com/yogawahyudi7/go-otel/internal/handler"
@@ -20,8 +23,6 @@ import (
 	"github.com/yogawahyudi7/go-otel/pkg/database"
 	"github.com/yogawahyudi7/go-otel/pkg/logger"
 	"github.com/yogawahyudi7/go-otel/pkg/telemetry"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho"
-	"go.uber.org/zap"
 )
 
 func main() {

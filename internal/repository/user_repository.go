@@ -5,10 +5,11 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/yogawahyudi7/go-otel/internal/domain"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"gorm.io/gorm"
+
+	"github.com/yogawahyudi7/go-otel/internal/domain"
 )
 
 // UserRepository defines the interface for user data operations

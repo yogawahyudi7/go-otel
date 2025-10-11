@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/yogawahyudi7/go-otel/config"
-	"github.com/yogawahyudi7/go-otel/pkg/logger"
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
+
+	"github.com/yogawahyudi7/go-otel/config"
+	"github.com/yogawahyudi7/go-otel/pkg/logger"
 )
 
 // DB is the database connection instance

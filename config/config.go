@@ -38,9 +38,9 @@ type DatabaseConfig struct {
 
 // OtelConfig holds OpenTelemetry configuration
 type OtelConfig struct {
-	Enabled         bool
-	ServiceName     string
-	ExporterURL     string
+	Enabled          bool
+	ServiceName      string
+	ExporterURL      string
 	ExporterInsecure bool
 }
 

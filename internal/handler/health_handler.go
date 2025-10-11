@@ -6,9 +6,10 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"go.uber.org/zap"
+
 	"github.com/yogawahyudi7/go-otel/pkg/database"
 	"github.com/yogawahyudi7/go-otel/pkg/logger"
-	"go.uber.org/zap"
 )
 
 // HealthHandler handles health check requests

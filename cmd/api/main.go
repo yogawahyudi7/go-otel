@@ -84,7 +84,7 @@ func main() {
 	logger.Info("Database migration completed")
 
 	// Initialize tracer
-	tracer := telemetry.GetTracer("go-otel-api")
+	tracer := telemetry.GetTracer("go-otel")
 
 	// Initialize repositories
 	userRepo := repository.NewUserRepository(db, tracer)

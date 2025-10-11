@@ -1,0 +1,39 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+
+# Environment files
+.env
+.env.*
+
+# Build artifacts
+bin/
+dist/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test files
+*.test
+*.out
+
+# Documentation
+README.md
+docs/
+
+# Kubernetes manifests
+k8s/
+*.yaml
+*.yml
+
+# Other
+.DS_Store
+Thumbs.db
+tmp/
+logs/

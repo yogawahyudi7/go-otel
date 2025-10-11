@@ -1,0 +1,56 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: go-otel-api-hpa
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: go-otel-api
+
+  # Min dan Max replicas
+  minReplicas: 3
+  maxReplicas: 10
+
+  # Metrics untuk autoscaling
+  metrics:
+    # CPU utilization
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+    # Memory utilization
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+  # Behavior untuk scaling
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300  # 5 menit stabilisasi sebelum scale down
+      policies:
+        - type: Percent
+          value: 50  # Scale down maksimal 50% pods
+          periodSeconds: 60
+        - type: Pods
+          value: 1  # Atau maksimal 1 pod per periode
+          periodSeconds: 60
+      selectPolicy: Min  # Pilih yang paling konservatif
+
+    scaleUp:
+      stabilizationWindowSeconds: 0  # Scale up immediately
+      policies:
+        - type: Percent
+          value: 100  # Scale up maksimal 100% pods
+          periodSeconds: 30
+        - type: Pods
+          value: 2  # Atau maksimal 2 pods per periode
+          periodSeconds: 30
+      selectPolicy: Max  # Pilih yang paling agresif

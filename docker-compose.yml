@@ -1,0 +1,91 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: go-otel-postgres
+    environment:
+      POSTGRES_DB: go_otel_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - go-otel-network
+
+  # Jaeger - Distributed Tracing UI (with OTLP support)
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: go-otel-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"  # Jaeger collector HTTP
+      - "4317:4317"    # OTLP gRPC receiver
+      - "4318:4318"    # OTLP HTTP receiver
+    networks:
+      - go-otel-network
+
+  # Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: go-otel-api
+    ports:
+      - "8080:8080"
+    environment:
+      # App Config
+      APP_NAME: go-otel-api
+      APP_ENV: development
+      APP_PORT: 8080
+
+      # Database Config
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: go_otel_db
+      DB_SSL_MODE: disable
+
+      # Connection Pool
+      DB_MAX_OPEN_CONNS: 25
+      DB_MAX_IDLE_CONNS: 10
+      DB_CONN_MAX_LIFETIME: 5m
+      DB_CONN_MAX_IDLE_TIME: 10m
+
+      # OpenTelemetry
+      OTEL_ENABLED: "true"
+      OTEL_SERVICE_NAME: go-otel-api
+      OTEL_EXPORTER_OTLP_ENDPOINT: jaeger:4317
+      OTEL_EXPORTER_OTLP_INSECURE: "true"
+
+      # Logging
+      LOG_LEVEL: debug
+      LOG_FORMAT: json
+    depends_on:
+      postgres:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+    networks:
+      - go-otel-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  go-otel-network:
+    driver: bridge
+
+# Note: OTEL Collector is not needed - Jaeger has built-in OTLP support
+# The app sends traces directly to Jaeger on port 4317

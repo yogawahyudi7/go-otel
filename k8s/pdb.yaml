@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: go-otel-api-pdb
+  namespace: default
+spec:
+  minAvailable: 2  # Minimal 2 pod harus tersedia saat disruption
+  selector:
+    matchLabels:
+      app: go-otel-api

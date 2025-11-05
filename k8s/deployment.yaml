@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: go-otel-api
+  name: go-otel
   namespace: default
   labels:
-    app: go-otel-api
+    app: go-otel
     version: v1
 spec:
   # Jumlah replica - sesuaikan dengan kebutuhan
@@ -19,12 +19,12 @@ spec:
 
   selector:
     matchLabels:
-      app: go-otel-api
+      app: go-otel
 
   template:
     metadata:
       labels:
-        app: go-otel-api
+        app: go-otel
         version: v1
       annotations:
         prometheus.io/scrape: "true"
@@ -49,12 +49,12 @@ spec:
                     - key: app
                       operator: In
                       values:
-                        - go-otel-api
+                        - go-otel
                 topologyKey: kubernetes.io/hostname
 
       containers:
-        - name: go-otel-api
-          image: your-registry/go-otel-api:latest  # Ganti dengan image registry Anda
+        - name: go-otel
+          image: your-registry/go-otel:latest  # Ganti dengan image registry Anda
           imagePullPolicy: Always
 
           ports:
@@ -65,9 +65,9 @@ spec:
           # Environment variables dari ConfigMap
           envFrom:
             - configMapRef:
-                name: go-otel-api-config
+                name: go-otel-config
             - secretRef:
-                name: go-otel-api-secret
+                name: go-otel-secret
 
           # Resource limits dan requests
           resources:

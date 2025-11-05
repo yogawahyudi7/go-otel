@@ -54,7 +54,7 @@ type LogConfig struct {
 func Load() (*Config, error) {
 	cfg := &Config{
 		App: AppConfig{
-			Name: getEnv("APP_NAME", "go-otel-api"),
+			Name: getEnv("APP_NAME", "go-otel"),
 			Env:  getEnv("APP_ENV", "development"),
 			Port: getEnv("APP_PORT", "8080"),
 		},
@@ -72,7 +72,7 @@ func Load() (*Config, error) {
 		},
 		Otel: OtelConfig{
 			Enabled:          getEnvAsBool("OTEL_ENABLED", true),
-			ServiceName:      getEnv("OTEL_SERVICE_NAME", "go-otel-api"),
+			ServiceName:      getEnv("OTEL_SERVICE_NAME", "go-otel"),
 			ExporterURL:      getEnv("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4317"),
 			ExporterInsecure: getEnvAsBool("OTEL_EXPORTER_OTLP_INSECURE", true),
 		},

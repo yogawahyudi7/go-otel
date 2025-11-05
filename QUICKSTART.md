@@ -24,13 +24,19 @@
 
 ## 🏃 Running Paling Cepat
 
-### Option 1: Docker Compose (Paling Mudah)
+### Option 1: Docker Compose (Paling Mudah - Recommended)
 
 ```bash
 # 1. Clone dan masuk ke folder
 cd go-otel
 
-# 2. Start semua services (PostgreSQL + App + Jaeger + OTEL Collector)
+# 2. Start FULL observability stack:
+#    - PostgreSQL (database)
+#    - App (Go application)
+#    - Jaeger (distributed tracing)
+#    - Loki (log storage)
+#    - Promtail (log collector)
+#    - Grafana (unified dashboard)
 docker-compose up -d
 
 # 3. Lihat logs
@@ -39,19 +45,25 @@ docker-compose logs -f app
 # 4. Test API
 curl http://localhost:8080/health/ready
 
-# 5. Buat user
+# 5. Buat user (akan generate traces + logs)
 curl -X POST http://localhost:8080/api/v1/users \
   -H "Content-Type: application/json" \
   -d '{"name":"Test User","email":"test@example.com"}'
 
-# 6. Lihat tracing di Jaeger
-open http://localhost:16686
+# 6. Access Observability UIs
+open http://localhost:16686   # Jaeger (traces)
+open http://localhost:3000    # Grafana (logs + traces)
+# Grafana login: admin/admin
 
 # Stop semua
 docker-compose down
 ```
 
-**✅ Selesai! Service sudah running lengkap dengan database dan monitoring!**
+**✅ Selesai! Full observability stack running dengan:**
+- ✅ Distributed tracing (Jaeger)
+- ✅ Centralized logging (Loki + Promtail)
+- ✅ Unified visualization (Grafana)
+- ✅ Automatic logs ↔ traces correlation
 
 ---
 
@@ -94,20 +106,20 @@ nano k8s/secret.yaml
 
 # 3. Update image di deployment
 nano k8s/deployment.yaml
-# Ganti: image: your-registry/go-otel-api:latest
+# Ganti: image: your-registry/go-otel:latest
 
 # 4. Build dan push image
-docker build -t your-registry/go-otel-api:latest .
-docker push your-registry/go-otel-api:latest
+docker build -t your-registry/go-otel:latest .
+docker push your-registry/go-otel:latest
 
 # 5. Deploy ke Kubernetes
 make k8s-deploy
 
 # 6. Check status
-kubectl get pods -l app=go-otel-api
+kubectl get pods -l app=go-otel
 
 # 7. Test via port-forward
-kubectl port-forward svc/go-otel-api-service 8080:80
+kubectl port-forward svc/go-otel-service 8080:80
 
 # 8. Test API
 curl http://localhost:8080/health/ready
@@ -119,13 +131,35 @@ curl http://localhost:8080/health/ready
 
 ### Setelah docker-compose up:
 
-| Service | URL | Description |
-|---------|-----|-------------|
-| **API** | http://localhost:8080 | Main application |
-| **Health** | http://localhost:8080/health/ready | Health check |
-| **Jaeger UI** | http://localhost:16686 | Distributed tracing |
-| **PostgreSQL** | localhost:5432 | Database (postgres/postgres) |
-| **OTEL Collector** | localhost:4317 | OpenTelemetry |
+| Service | URL | Credentials | Description |
+|---------|-----|-------------|-------------|
+| **API** | http://localhost:8080 | - | Main application |
+| **Health Check** | http://localhost:8080/health/ready | - | Application health |
+| **Jaeger UI** | http://localhost:16686 | - | Distributed tracing visualization |
+| **Grafana** | http://localhost:3000 | admin/admin | Logs + Traces unified dashboard |
+| **Loki API** | http://localhost:3100 | - | Log aggregation API |
+| **PostgreSQL** | localhost:5432 | postgres/postgres | Database |
+
+### Grafana Quick Access
+
+**Pre-configured datasources:**
+- **Loki** (default) - Query logs dengan LogQL
+- **Jaeger** - View distributed traces
+
+**Example queries di Grafana Explore:**
+```logql
+# All logs
+{service="app"}
+
+# Error logs only
+{service="app"} |= "level=error"
+
+# Logs by container
+{container="go-otel"}
+
+# Find logs by trace ID (correlation)
+{service="app"} |= "trace_id=YOUR_TRACE_ID"
+```
 
 ---
 
@@ -227,7 +261,7 @@ psql -h localhost -U postgres -d go_otel_db
 ### Pods not starting (Kubernetes)
 ```bash
 # Check pod status
-kubectl get pods -l app=go-otel-api
+kubectl get pods -l app=go-otel
 
 # Describe pod
 kubectl describe pod <pod-name>
@@ -245,7 +279,7 @@ kubectl get events --sort-by=.metadata.creationTimestamp
 docker login
 
 # Re-push image
-docker push your-registry/go-otel-api:latest
+docker push your-registry/go-otel:latest
 ```
 
 ---
@@ -253,11 +287,13 @@ docker push your-registry/go-otel-api:latest
 ## 📚 Next Steps
 
 1. ✅ Run aplikasi (pilih salah satu option di atas)
-2. ⏭️ Test API endpoints
-3. ⏭️ Lihat tracing di Jaeger UI
-4. ⏭️ Setup monitoring (Prometheus/Grafana)
-5. ⏭️ Configure CI/CD
-6. ⏭️ Production deployment
+2. ✅ Test API endpoints
+3. ✅ Lihat traces di Jaeger UI (http://localhost:16686)
+4. ✅ Query logs di Grafana (http://localhost:3000)
+5. ✅ Test correlation: Click trace_id di logs → Jump ke Jaeger
+6. ⏭️ Configure CI/CD
+7. ⏭️ Production deployment ke Kubernetes
+8. ⏭️ (Optional) Add Prometheus untuk metrics
 
 ---
 
@@ -302,17 +338,32 @@ docker-compose ps           # List services
 
 Before deploying to production:
 
+### Security
 - [ ] Ganti database password di `k8s/secret.yaml`
+- [ ] Update Grafana admin password di `k8s/grafana-deployment.yaml`
+- [ ] Configure ingress dengan TLS/SSL
+- [ ] Security scan images
+
+### Infrastructure
 - [ ] Update image registry di `k8s/deployment.yaml`
 - [ ] Review resource limits
-- [ ] Setup persistent volume untuk PostgreSQL
-- [ ] Configure ingress dengan TLS/SSL
-- [ ] Setup monitoring (Prometheus/Grafana)
-- [ ] Setup logging aggregation
-- [ ] Configure backup strategy
+- [ ] Setup persistent volume untuk PostgreSQL (done via StatefulSet)
+- [ ] Setup persistent volume untuk Loki (10Gi)
+- [ ] Setup persistent volume untuk Grafana (5Gi)
+
+### Observability (Already Configured!)
+- [x] ✅ Distributed tracing (Jaeger)
+- [x] ✅ Log aggregation (Loki + Promtail)
+- [x] ✅ Unified visualization (Grafana)
+- [ ] (Optional) Setup Prometheus untuk metrics
+- [ ] Configure log retention policy (default: 7 days)
+
+### Operations
+- [ ] Configure backup strategy untuk PostgreSQL
+- [ ] Configure backup strategy untuk Loki data
 - [ ] Setup CI/CD pipeline
-- [ ] Security scan images
 - [ ] Load testing
+- [ ] Setup alerting rules di Grafana
 
 ---
 

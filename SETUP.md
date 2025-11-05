@@ -88,13 +88,15 @@ Panduan lengkap untuk menjalankan service ini dengan baik, baik untuk developmen
 
 - **Lens** - Kubernetes IDE (GUI)
 
-### 3. Observability Stack (Optional)
+### 3. Observability Stack (Included in Docker Compose)
 
-- **OpenTelemetry Collector** - Untuk tracing
-- **Jaeger** atau **Zipkin** - Tracing UI
-- **Prometheus** - Metrics
-- **Grafana** - Visualization
-- **Loki** - Log aggregation
+- **Jaeger** - Distributed tracing (dengan OTLP support built-in)
+- **Loki** - Log aggregation dan storage
+- **Promtail** - Log collector
+- **Grafana** - Unified visualization untuk logs dan traces
+
+**Optional untuk production:**
+- **Prometheus** - Metrics collection (jika ingin menambahkan metrics)
 
 ---
 
@@ -136,7 +138,7 @@ code .env
 
 ```env
 # Server
-APP_NAME=go-otel-api
+APP_NAME=go-otel
 APP_ENV=development
 APP_PORT=8080
 
@@ -156,7 +158,7 @@ DB_CONN_MAX_IDLE_TIME=10m
 
 # OpenTelemetry (optional untuk development)
 OTEL_ENABLED=false
-OTEL_SERVICE_NAME=go-otel-api
+OTEL_SERVICE_NAME=go-otel
 OTEL_EXPORTER_OTLP_ENDPOINT=localhost:4317
 OTEL_EXPORTER_OTLP_INSECURE=true
 
@@ -223,7 +225,7 @@ make run
 **Option C: Build then run**
 ```bash
 make build
-./bin/go-otel-api
+./bin/go-otel
 ```
 
 **Option D: Hot reload (dengan Air)**
@@ -252,44 +254,93 @@ curl http://localhost:8080/api/v1/users
 
 ---
 
-### B. Development Setup dengan OpenTelemetry (Optional)
+### B. Development Setup dengan Full Observability Stack (Recommended)
 
-#### 1. Start OpenTelemetry Collector
-
-**Option A: Via Docker**
-```bash
-make dev-otel-up
-```
-
-**Option B: Via Docker Compose**
-```bash
-# Tambahkan ke docker-compose.yml
-docker-compose up -d otel-collector
-```
-
-#### 2. Start Jaeger (untuk visualisasi tracing)
+#### 1. Start Full Stack dengan Docker Compose
 
 ```bash
-docker run -d --name jaeger \
-  -p 16686:16686 \
-  -p 4317:4317 \
-  -p 4318:4318 \
-  jaegertracing/all-in-one:latest
+# Start semua services: App, PostgreSQL, Jaeger, Loki, Promtail, Grafana
+docker-compose up -d
 ```
 
-Access Jaeger UI: http://localhost:16686
+Ini akan menjalankan:
+- **PostgreSQL** - Database (port 5432)
+- **Jaeger** - Tracing UI (port 16686)
+- **Loki** - Log storage (port 3100)
+- **Promtail** - Log collector
+- **Grafana** - Unified dashboard (port 3000)
+- **App** - Go application (port 8080)
 
-#### 3. Update .env
+#### 2. Access Observability UIs
 
-```env
-OTEL_ENABLED=true
-OTEL_EXPORTER_OTLP_ENDPOINT=localhost:4317
-```
+**Jaeger (Distributed Tracing):**
+- URL: http://localhost:16686
+- Purpose: View request traces, latency, dependencies
 
-#### 4. Restart Application
+**Grafana (Logs + Traces):**
+- URL: http://localhost:3000
+- Username: `admin`
+- Password: `admin`
+- Purpose: Query logs dari Loki, view traces dari Jaeger
+
+**Loki API (Direct):**
+- URL: http://localhost:3100
+- Purpose: Direct LogQL queries (biasanya via Grafana)
+
+#### 3. Verify Observability Stack
 
 ```bash
-make run
+# Check all services running
+docker-compose ps
+
+# Check logs being collected
+curl http://localhost:3100/loki/api/v1/labels
+
+# Test tracing
+curl http://localhost:8080/api/v1/users
+# Then check Jaeger UI for traces
+
+# Test logging in Grafana
+# Open Grafana > Explore > Select Loki datasource
+# Query: {service="app"}
+```
+
+#### 4. Query Logs di Grafana
+
+**Example LogQL Queries:**
+
+```logql
+# All logs dari aplikasi
+{service="app"}
+
+# Error logs only
+{service="app"} |= "level=error"
+
+# Logs dari specific container
+{container="go-otel"}
+
+# Rate of errors
+rate({service="app"} |= "error" [5m])
+
+# Correlation: Find logs by trace_id
+{service="app"} |= "trace_id=abc123"
+```
+
+#### 5. Correlation: Logs ↔ Traces
+
+Grafana sudah dikonfigurasi untuk **automatic correlation**:
+
+- **Dari Trace → Logs**: Click trace di Jaeger, lihat related logs
+- **Dari Logs → Trace**: Click trace_id di log, jump ke Jaeger trace
+
+#### 6. Stop Stack
+
+```bash
+# Stop all services
+docker-compose down
+
+# Stop and remove volumes (WARNING: deletes data)
+docker-compose down -v
 ```
 
 ---
@@ -308,7 +359,7 @@ make docker-build
 # Dengan .env file
 docker run -p 8080:8080 --env-file .env \
   --network host \
-  your-registry/go-otel-api:latest
+  your-registry/go-otel:latest
 ```
 
 #### 3. Run dengan Docker Compose
@@ -477,8 +528,8 @@ spec:
   template:
     spec:
       containers:
-        - name: go-otel-api
-          image: your-registry/go-otel-api:latest  # Ganti ini
+        - name: go-otel
+          image: your-registry/go-otel:latest  # Ganti ini
 ```
 
 **Edit k8s/ingress.yaml (jika menggunakan ingress):**
@@ -497,20 +548,34 @@ spec:
 
 ```bash
 # Build image
-docker build -t your-registry/go-otel-api:v1.0.0 .
+docker build -t your-registry/go-otel:v1.0.0 .
 
 # Push to registry
-docker push your-registry/go-otel-api:v1.0.0
+docker push your-registry/go-otel:v1.0.0
 
 # Tag as latest
-docker tag your-registry/go-otel-api:v1.0.0 your-registry/go-otel-api:latest
-docker push your-registry/go-otel-api:latest
+docker tag your-registry/go-otel:v1.0.0 your-registry/go-otel:latest
+docker push your-registry/go-otel:latest
 ```
 
-#### 6. Deploy to Kubernetes
+#### 6. Deploy Observability Stack to Kubernetes
 
 ```bash
-# Deploy semua resources
+# Deploy Loki stack (logs)
+kubectl apply -f k8s/loki-deployment.yaml
+kubectl apply -f k8s/promtail-daemonset.yaml
+kubectl apply -f k8s/grafana-deployment.yaml
+
+# Verify observability stack
+kubectl get pods -l app=loki
+kubectl get pods -l app=promtail
+kubectl get pods -l app=grafana
+```
+
+#### 7. Deploy Application to Kubernetes
+
+```bash
+# Deploy semua application resources
 make k8s-deploy
 
 # Atau manual:
@@ -523,37 +588,76 @@ kubectl apply -f k8s/hpa.yaml
 kubectl apply -f k8s/pdb.yaml
 ```
 
-#### 7. Verify Deployment
+#### 8. Verify Deployment
 
 ```bash
 # Check pods
-kubectl get pods -l app=go-otel-api
+kubectl get pods -l app=go-otel
 
 # Check deployment
-kubectl get deployment go-otel-api
+kubectl get deployment go-otel
 
 # Check service
-kubectl get svc go-otel-api-service
+kubectl get svc go-otel-service
 
 # Check HPA
-kubectl get hpa go-otel-api-hpa
+kubectl get hpa go-otel-hpa
 
-# Check logs
-kubectl logs -l app=go-otel-api --tail=100 -f
+# Check logs (via Loki, recommended)
+# Access Grafana UI and use LogQL queries
+
+# Or direct kubectl logs
+kubectl logs -l app=go-otel --tail=100 -f
 ```
 
-#### 8. Access Application
+#### 9. Access Observability UIs
+
+**Access Grafana (Logs + Traces):**
+```bash
+# Port forward Grafana
+kubectl port-forward svc/grafana 3000:3000
+
+# Open browser: http://localhost:3000
+# Username: admin
+# Password: admin (or check secret)
+```
+
+**Access Loki API (Direct):**
+```bash
+# Port forward Loki
+kubectl port-forward svc/loki 3100:3100
+
+# Query logs via API
+curl http://localhost:3100/loki/api/v1/labels
+```
+
+**Query Logs di Kubernetes:**
+```bash
+# Via Grafana Explore
+# LogQL: {app="go-otel", namespace="default"}
+
+# See all pods logs
+# LogQL: {app="go-otel"}
+
+# Filter by log level
+# LogQL: {app="go-otel"} |= "level=error"
+
+# Aggregate errors per pod
+# LogQL: sum by (pod) (count_over_time({app="go-otel"} |= "error" [5m]))
+```
+
+#### 10. Access Application
 
 **Port Forward (untuk testing):**
 ```bash
-kubectl port-forward svc/go-otel-api-service 8080:80
+kubectl port-forward svc/go-otel-service 8080:80
 ```
 
 Then access: http://localhost:8080
 
 **Via LoadBalancer (jika ada):**
 ```bash
-kubectl get svc go-otel-api-service
+kubectl get svc go-otel-service
 # Note external IP
 ```
 
@@ -563,10 +667,10 @@ kubectl get svc go-otel-api-service
 kubectl apply -f k8s/ingress.yaml
 
 # Get ingress address
-kubectl get ingress go-otel-api-ingress
+kubectl get ingress go-otel-ingress
 
 # Minikube specific
-minikube service go-otel-api-service --url
+minikube service go-otel-service --url
 ```
 
 ---
@@ -667,7 +771,7 @@ kubectl logs <pod-name>
 #### 3. Image Pull Error
 ```bash
 # Check image exists
-docker images | grep go-otel-api
+docker images | grep go-otel
 
 # Create image pull secret (jika private registry)
 kubectl create secret docker-registry regcred \
@@ -687,7 +791,7 @@ kubectl create secret docker-registry regcred \
 kubectl get deployment metrics-server -n kube-system
 
 # Check HPA status
-kubectl describe hpa go-otel-api-hpa
+kubectl describe hpa go-otel-hpa
 
 # Install metrics-server jika belum ada
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
@@ -695,32 +799,52 @@ kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/late
 
 ---
 
-## 📊 Monitoring Setup
+## 📊 Observability Architecture
 
-### 1. Prometheus + Grafana
+Project ini sudah include **full observability stack**:
 
+### 1. **Traces** - Jaeger
+- Distributed tracing via OpenTelemetry
+- OTLP gRPC receiver (port 4317)
+- UI: http://localhost:16686 (Docker) atau port-forward (K8s)
+- **Sudah configured** - no extra setup needed
+
+### 2. **Logs** - Loki + Promtail
+- Centralized log aggregation
+- 7 days retention (configurable)
+- Auto-collects dari semua containers/pods
+- **Sudah configured** - no extra setup needed
+
+### 3. **Visualization** - Grafana
+- Unified dashboard untuk logs dan traces
+- Pre-configured datasources (Loki + Jaeger)
+- Automatic correlation: logs ↔ traces
+- **Sudah configured** - login dan langsung pakai
+
+### 4. **Metrics** - Optional (Future)
 ```bash
-# Install via Helm
+# Install Prometheus via Helm (jika ingin add metrics)
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-
 helm install prometheus prometheus-community/kube-prometheus-stack
 ```
 
-### 2. Jaeger (Tracing)
+### Log Retention & Storage
 
-```bash
-# Install via Helm
-helm repo add jaegertracing https://jaegertracing.github.io/helm-charts
-helm install jaeger jaegertracing/jaeger
-```
+**Docker Compose:**
+- Logs disimpan di volume `loki_data`
+- Retention: 7 days (default)
+- Edit `config/loki-config.yaml` untuk ubah retention
 
-### 3. Loki (Logging)
+**Kubernetes:**
+- Logs disimpan di PersistentVolume (10Gi)
+- Retention: 7 days (default)
+- Edit `k8s/loki-deployment.yaml` ConfigMap untuk ubah retention
 
-```bash
-# Install via Helm
-helm repo add grafana https://grafana.github.io/helm-charts
-helm install loki grafana/loki-stack
+**Customize Retention:**
+```yaml
+# Edit retention period
+limits_config:
+  retention_period: 168h  # 7 days (ganti sesuai kebutuhan)
 ```
 
 ---

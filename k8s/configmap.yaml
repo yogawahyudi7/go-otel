@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: go-otel-api-config
+  name: go-otel-config
   namespace: default
 data:
-  APP_NAME: "go-otel-api"
+  APP_NAME: "go-otel"
   APP_ENV: "production"
   APP_PORT: "8080"
 
@@ -23,7 +23,7 @@ data:
 
   # OpenTelemetry Configuration
   OTEL_ENABLED: "true"
-  OTEL_SERVICE_NAME: "go-otel-api"
+  OTEL_SERVICE_NAME: "go-otel"
   OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
   OTEL_EXPORTER_OTLP_INSECURE: "true"
 

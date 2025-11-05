@@ -21,6 +21,7 @@ func RequestLogger() echo.MiddlewareFunc {
 			// Log request
 			req := c.Request()
 			res := c.Response()
+			latency := time.Since(start)
 
 			fields := []zap.Field{
 				zap.String("method", req.Method),
@@ -28,7 +29,7 @@ func RequestLogger() echo.MiddlewareFunc {
 				zap.String("path", c.Path()),
 				zap.Int("status", res.Status),
 				zap.Int64("size", res.Size),
-				zap.Duration("latency", time.Since(start)),
+				zap.String("latency", latency.String()),
 				zap.String("remote_ip", c.RealIP()),
 				zap.String("user_agent", req.UserAgent()),
 			}

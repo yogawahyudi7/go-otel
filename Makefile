@@ -1,7 +1,7 @@
 .PHONY: help build run test clean docker-build docker-push k8s-deploy k8s-delete
 
 # Variables
-APP_NAME=go-otel-api
+APP_NAME=go-otel
 DOCKER_IMAGE=your-registry/$(APP_NAME)
 DOCKER_TAG=latest
 GO_VERSION=1.21

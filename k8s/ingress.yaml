@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: go-otel-api-ingress
+  name: go-otel-ingress
   namespace: default
   annotations:
     # Nginx ingress annotations
@@ -32,7 +32,7 @@ spec:
   # tls:
   #   - hosts:
   #       - api.yourdomain.com
-  #     secretName: go-otel-api-tls
+  #     secretName: go-otel-tls
 
   rules:
     - host: api.yourdomain.com  # Ganti dengan domain Anda
@@ -42,6 +42,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: go-otel-api-service
+                name: go-otel-service
                 port:
                   number: 80

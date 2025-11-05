@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: go-otel-api-service
+  name: go-otel-service
   namespace: default
   labels:
-    app: go-otel-api
+    app: go-otel
 spec:
   type: ClusterIP
   selector:
-    app: go-otel-api
+    app: go-otel
   ports:
     - name: http
       port: 80
